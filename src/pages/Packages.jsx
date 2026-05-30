@@ -4,6 +4,7 @@ import { Clock, Filter, MapPin, Search, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
+import { SITE } from '@/lib/constants';
 import { destinationService, getDestinationName, packageService } from '@/services/cmsService';
 
 const Packages = () => {
@@ -11,6 +12,16 @@ const Packages = () => {
   const [destinationId, setDestinationId] = useState('');
   const destinations = destinationService.published();
   const packages = packageService.published();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'AsianTrips Holidays tour packages',
+    itemListElement: packages.map((pkg, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: { '@type': 'TouristTrip', name: pkg.title, url: `${SITE.baseUrl}/packages/${pkg.slug}` },
+    })),
+  };
 
   const filtered = useMemo(() => packages.filter((pkg) => {
     const matchesQuery = [pkg.title, pkg.overview, pkg.category].join(' ').toLowerCase().includes(query.toLowerCase());
@@ -20,7 +31,7 @@ const Packages = () => {
 
   return (
     <>
-      <SEO title="Tour Packages" description="Search AsianTrips Holidays packages for Sikkim, Darjeeling, Bhutan, Northeast India, and Nepal." path="/packages" />
+      <SEO title="Tour Packages" description="Search AsianTrips Holidays packages for Sikkim, Darjeeling, Bhutan, Northeast India, and Nepal." path="/packages" jsonLd={jsonLd} />
       <main>
         <section className="bg-gradient-to-br from-blue-950 via-blue-900 to-orange-500 px-4 py-20 text-white">
           <div className="mx-auto max-w-7xl">

@@ -4,6 +4,7 @@ import { Calendar, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
+import { SITE } from '@/lib/constants';
 import { createWhatsAppUrl, destinationWhatsAppMessage } from '@/lib/whatsapp';
 import { destinationService, packageService } from '@/services/cmsService';
 
@@ -12,10 +13,19 @@ const DestinationDetail = () => {
   const destination = destinationService.getBySlug(slug);
   if (!destination) return <Navigate to="/destinations" replace />;
   const packages = packageService.published().filter((pkg) => pkg.destinationId === destination.id);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristDestination',
+    name: destination.name,
+    description: destination.seoDescription || destination.shortDescription,
+    image: destination.heroImage,
+    url: `${SITE.baseUrl}/destinations/${destination.slug}`,
+    touristType: 'Himalayan leisure travelers',
+  };
 
   return (
     <>
-      <SEO title={destination.seoTitle || destination.name} description={destination.seoDescription || destination.shortDescription} path={`/destinations/${destination.slug}`} image={destination.heroImage} />
+      <SEO title={destination.seoTitle || destination.name} description={destination.seoDescription || destination.shortDescription} path={`/destinations/${destination.slug}`} image={destination.heroImage} jsonLd={jsonLd} />
       <main>
         <section className="relative bg-slate-900 text-white">
           <img src={destination.heroImage} alt={destination.name} className="absolute inset-0 h-full w-full object-cover opacity-45" />
