@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Star } from 'lucide-react';
 import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
 import { SITE } from '@/lib/constants';
 import { testimonialService } from '@/services/cmsService';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 const Testimonials = () => {
-  const testimonials = testimonialService.published();
+  const loadTestimonials = useCallback(() => testimonialService.published(), []);
+  const { data: testimonials, isLoading, error } = useAsyncData(loadTestimonials, []);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
@@ -27,6 +29,8 @@ const Testimonials = () => {
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-orange-600">Guest stories</p>
         <h1 className="mt-3 text-4xl font-bold text-slate-900">Traveler Testimonials</h1>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {isLoading && <p className="text-slate-500">Loading testimonials...</p>}
+          {error && <p className="text-red-600">{error}</p>}
           {testimonials.map((item) => (
             <article key={item.id} className="rounded-3xl border bg-white p-6 shadow-lg">
               <div className="mb-4 flex text-orange-400">{Array.from({ length: Number(item.rating) || 0 }).map((_, index) => <Star key={index} className="h-5 w-5 fill-current" />)}</div>

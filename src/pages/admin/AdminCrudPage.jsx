@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ImagePlus, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { blogService, destinationService, galleryService, getDestinationName, packageService, testimonialService } from '@/services/cmsService';
+import { blogService, destinationService, galleryService, packageService, testimonialService, uploadCmsImage } from '@/services/cmsService';
 import { slugify } from '@/lib/slug';
 
 const configs = {
@@ -40,7 +40,7 @@ const configs = {
   },
   gallery: {
     title: 'Gallery Management',
-    description: 'Manage public gallery records with an upload placeholder ready for future storage integration.',
+    description: 'Manage public gallery records with Supabase Storage image uploads.',
     newLabel: 'Add gallery item',
     service: galleryService,
     empty: { title: '', imageUrl: '', altText: '', destinationId: '', isPublished: true, featured: false },
@@ -62,6 +62,7 @@ const configs = {
 const arrayFields = new Set(['highlights', 'itinerary', 'inclusions', 'exclusions', 'gallery']);
 const textareaFields = new Set(['description', 'overview', 'content', 'quote', 'seoDescription', 'shortDescription', 'excerpt']);
 const imageFields = new Set(['heroImage', 'coverImage', 'imageUrl', 'gallery']);
+const uploadBuckets = { heroImage: 'destinations', coverImage: 'blogs', imageUrl: 'gallery', gallery: 'packages' };
 const booleanFields = new Set(['isPublished', 'featured']);
 
 const fieldLabels = {
@@ -97,8 +98,11 @@ const normalizeForSave = (record) => {
 
 const AdminCrudPage = ({ type }) => {
   const config = configs[type];
-  const [records, setRecords] = useState(config.service.list());
-  const [selectedId, setSelectedId] = useState(records[0]?.id || 'new');
+  const [records, setRecords] = useState([]);
+  const [destinations, setDestinations] = useState([]);
+  const [selectedId, setSelectedId] = useState('new');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
@@ -123,7 +127,24 @@ const AdminCrudPage = ({ type }) => {
       .includes(normalizedQuery));
   }, [config.primary, query, records]);
 
-  const refresh = () => setRecords(config.service.list());
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [items, destinationItems] = await Promise.all([config.service.list(), destinationService.list()]);
+      setRecords(items);
+      setDestinations(destinationItems);
+      setSelectedId((current) => (current !== 'new' && !items.some((item) => item.id === current) ? items[0]?.id || 'new' : current));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [config.service]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const updateField = (field, value) => {
     setForm((prev) => {
@@ -134,20 +155,30 @@ const AdminCrudPage = ({ type }) => {
     });
   };
 
-  const save = () => {
+  const save = async () => {
     const payload = normalizeForSave(form);
     if (!payload.slug && config.slugSource) payload.slug = slugify(payload[config.slugSource]);
-    const saved = selectedId === 'new' ? config.service.create(payload) : config.service.update(selectedId, payload);
-    refresh();
+    const saved = selectedId === 'new' ? await config.service.create(payload) : await config.service.update(selectedId, payload);
+    await refresh();
     setSelectedId(saved.id);
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     const record = records.find((item) => item.id === id);
     if (!window.confirm(`Delete ${record?.[config.primary] || 'this record'}?`)) return;
-    config.service.remove(id);
-    refresh();
+    await config.service.remove(id);
+    await refresh();
     setSelectedId('new');
+  };
+
+  const uploadImage = async (field, file) => {
+    if (!file) return;
+    try {
+      const url = await uploadCmsImage(uploadBuckets[field], file);
+      updateField(field, field === 'gallery' ? [form.gallery, url].filter(Boolean).join('\n') : url);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const startNewRecord = () => {
@@ -173,7 +204,7 @@ const AdminCrudPage = ({ type }) => {
         {field === 'destinationId' ? (
           <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={form[field] || ''} onChange={(event) => updateField(field, event.target.value)}>
             <option value="">Select destination</option>
-            {destinationService.list().map((destination) => <option key={destination.id} value={destination.id}>{destination.name}</option>)}
+            {destinations.map((destination) => <option key={destination.id} value={destination.id}>{destination.name}</option>)}
           </select>
         ) : field === 'status' ? (
           <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={form[field] || 'draft'} onChange={(event) => updateField(field, event.target.value)}>
@@ -185,11 +216,12 @@ const AdminCrudPage = ({ type }) => {
         ) : (
           <Input className="mt-2" type={field === 'price' || field === 'rating' ? 'number' : 'text'} value={form[field] || ''} onChange={(event) => updateField(field, event.target.value)} />
         )}
-        {field === 'destinationId' && form[field] && <p className="mt-1 text-xs text-slate-500">Selected: {getDestinationName(form[field])}</p>}
+        {field === 'destinationId' && form[field] && <p className="mt-1 text-xs text-slate-500">Selected: {destinations.find((destination) => destination.id === form[field])?.name || 'Custom'}</p>}
         {imageFields.has(field) && (
           <div className="mt-3 rounded-xl border border-dashed bg-orange-50/60 p-4 text-sm text-slate-600">
-            <div className="flex items-center gap-2 font-medium text-orange-700"><ImagePlus className="h-4 w-4" /> Image upload placeholder</div>
-            <p className="mt-1">Paste an image URL for now. This area is reserved for future Supabase Storage uploads without changing the form structure.</p>
+            <div className="flex items-center gap-2 font-medium text-orange-700"><ImagePlus className="h-4 w-4" /> Supabase Storage upload</div>
+            <p className="mt-1">Upload an image to the {uploadBuckets[field]} bucket or paste an image URL manually.</p>
+            <input type="file" accept="image/*" onChange={(event) => uploadImage(field, event.target.files?.[0])} className="mt-3 text-xs" />
           </div>
         )}
       </div>
@@ -208,6 +240,8 @@ const AdminCrudPage = ({ type }) => {
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search records..." className="pl-9" />
         </label>
+        {isLoading && <p className="text-sm text-slate-500">Loading records...</p>}
+        {error && <p className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         <div className="space-y-2">
           {filteredRecords.map((record) => (
             <button key={record.id} onClick={() => setSelectedId(record.id)} className={`w-full rounded-xl border bg-white p-4 text-left shadow-sm ${selectedId === record.id ? 'border-orange-400 ring-2 ring-orange-100' : ''}`}>

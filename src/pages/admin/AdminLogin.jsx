@@ -5,26 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AsianTripsLogo from '@/components/AsianTripsLogo';
-import { ADMIN_DEMO_USER } from '@/lib/constants';
 import { useAuth } from '@/context/AuthContext';
 import SEO from '@/components/shared/SEO';
 
 const AdminLogin = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAuthLoading } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: ADMIN_DEMO_USER.email, password: ADMIN_DEMO_USER.password });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isAuthenticated) return <Navigate to="/admin" replace />;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    setIsSubmitting(true);
     try {
       await login(form);
       navigate('/admin');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -35,23 +38,22 @@ const AdminLogin = () => {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 inline-flex rounded-xl border p-3"><AsianTripsLogo type="minimal" /></div>
           <h1 className="text-2xl font-bold text-slate-900">Admin Login</h1>
-          <p className="mt-2 text-sm text-slate-600">Supabase Auth placeholder using demo local credentials.</p>
+          <p className="mt-2 text-sm text-slate-600">Sign in with the Supabase Auth admin user configured for AsianTrips Holidays.</p>
         </div>
         {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <Input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Password</Label>
-            <Input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+            <Input type="password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
           </div>
-          <Button className="w-full bg-orange-500 hover:bg-orange-600" type="submit"><Lock className="mr-2 h-4 w-4" /> Sign in</Button>
+          <Button disabled={isSubmitting || isAuthLoading} className="w-full bg-orange-500 hover:bg-orange-600" type="submit"><Lock className="mr-2 h-4 w-4" /> {isSubmitting ? 'Signing in...' : 'Sign in'}</Button>
         </div>
         <div className="mt-6 rounded-xl bg-slate-50 p-4 text-xs text-slate-600">
-          <p><strong>Demo email:</strong> {ADMIN_DEMO_USER.email}</p>
-          <p><strong>Demo password:</strong> {ADMIN_DEMO_USER.password}</p>
+          <p>Create or invite the admin user in Supabase Authentication, then use those live credentials here.</p>
         </div>
       </form>
     </div>
