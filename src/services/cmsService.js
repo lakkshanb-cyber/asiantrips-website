@@ -22,33 +22,40 @@ const writeCollection = (key, value) => {
 };
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+const isPublishedRecord = (item) => item.isPublished !== false && item.status !== 'draft';
+
+const normalizeSlug = (payload, records, slugField, currentId) => {
+  const candidate = payload.slug || payload[slugField] || payload.name || payload.title || payload.customerName;
+  return ensureUniqueSlug(candidate, records, currentId);
+};
 
 const createCrud = ({ key, fallback, prefix, slugField = 'title' }) => ({
   list: () => readCollection(key, fallback),
-  published: () => readCollection(key, fallback).filter((item) => item.isPublished !== false && item.status !== 'draft'),
+  published: () => readCollection(key, fallback).filter(isPublishedRecord),
   getById: (id) => readCollection(key, fallback).find((item) => item.id === id),
-  getBySlug: (slug) => readCollection(key, fallback).find((item) => item.slug === slug && item.isPublished !== false && item.status !== 'draft'),
+  getBySlug: (slug) => readCollection(key, fallback).find((item) => item.slug === slug && isPublishedRecord(item)),
   create: (payload) => {
     const records = readCollection(key, fallback);
     const record = {
       ...payload,
       id: makeId(prefix),
-      slug: payload.slug || ensureUniqueSlug(payload[slugField] || payload.name || payload.title, records),
+      slug: normalizeSlug(payload, records, slugField),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    return writeCollection(key, [record, ...records])[0];
+    writeCollection(key, [record, ...records]);
+    return clone(record);
   },
   update: (id, payload) => {
     const records = readCollection(key, fallback);
     const next = records.map((item) => {
       if (item.id !== id) return item;
       const merged = { ...item, ...payload, updatedAt: new Date().toISOString() };
-      if (!merged.slug) merged.slug = ensureUniqueSlug(merged[slugField] || merged.name || merged.title, records, id);
+      merged.slug = normalizeSlug(merged, records, slugField, id);
       return merged;
     });
     writeCollection(key, next);
-    return next.find((item) => item.id === id);
+    return clone(next.find((item) => item.id === id));
   },
   remove: (id) => {
     const records = readCollection(key, fallback);
@@ -64,6 +71,17 @@ export const testimonialService = createCrud({ key: 'testimonials', fallback: te
 
 export const inquiryService = {
   list: () => readCollection('inquiries', inquiries),
+  search: ({ query = '', status = 'all' } = {}) => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return readCollection('inquiries', inquiries).filter((item) => {
+      const matchesStatus = status === 'all' || item.status === status;
+      const searchable = [item.fullName, item.phone, item.whatsapp, item.destination, item.travelDate, item.month, item.budget, item.message, item.sourceType]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return matchesStatus && (!normalizedQuery || searchable.includes(normalizedQuery));
+    });
+  },
   create: (payload) => {
     const records = readCollection('inquiries', inquiries);
     const record = {
@@ -92,7 +110,9 @@ export const inquiryService = {
       total: records.length,
       newCount: records.filter((item) => item.status === 'new').length,
       contacted: records.filter((item) => item.status === 'contacted').length,
+      quoted: records.filter((item) => item.status === 'quoted').length,
       converted: records.filter((item) => item.status === 'converted').length,
+      lost: records.filter((item) => item.status === 'lost').length,
     };
   },
 };

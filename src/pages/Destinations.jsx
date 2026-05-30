@@ -4,14 +4,25 @@ import { Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
+import { SITE } from '@/lib/constants';
 import { destinationService } from '@/services/cmsService';
 
 const Destinations = () => {
   const destinations = destinationService.published();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'AsianTrips Holidays destinations',
+    itemListElement: destinations.map((destination, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: { '@type': 'TouristDestination', name: destination.name, url: `${SITE.baseUrl}/destinations/${destination.slug}` },
+    })),
+  };
 
   return (
     <>
-      <SEO title="Destinations" description="Explore AsianTrips Holidays destination guides for Sikkim, Darjeeling, Bhutan, Northeast India, and Nepal." path="/destinations" />
+      <SEO title="Destinations" description="Explore AsianTrips Holidays destination guides for Sikkim, Darjeeling, Bhutan, Northeast India, and Nepal." path="/destinations" jsonLd={jsonLd} />
       <main>
         <section className="bg-gradient-to-br from-blue-950 via-blue-900 to-orange-500 px-4 py-20 text-white">
           <div className="mx-auto max-w-7xl">

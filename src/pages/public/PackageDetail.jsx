@@ -15,7 +15,17 @@ const PackageDetail = () => {
   const pkg = packageService.getBySlug(slug);
   if (!pkg) return <Navigate to="/packages" replace />;
 
-  const jsonLd = { '@context': 'https://schema.org', '@type': 'TouristTrip', name: pkg.title, description: pkg.overview, offers: { '@type': 'Offer', priceCurrency: 'INR', price: pkg.price } };
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: pkg.title,
+    description: pkg.overview,
+    image: pkg.gallery?.[0],
+    url: `${SITE.baseUrl}/packages/${pkg.slug}`,
+    touristType: 'Families, couples, and small groups',
+    itinerary: pkg.itinerary?.map((day, index) => ({ '@type': 'ListItem', position: index + 1, name: `Day ${index + 1}`, description: day })),
+    offers: { '@type': 'Offer', priceCurrency: 'INR', price: pkg.price, availability: 'https://schema.org/InStock' },
+  };
 
   return (
     <>
