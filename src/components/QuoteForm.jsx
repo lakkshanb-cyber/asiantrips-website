@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { inquiryService } from '@/services/cmsService';
+import { trackEvent } from '@/lib/analytics';
 
-const QuoteForm = ({ onSuccess, className = "" }) => {
+const QuoteForm = ({ onSuccess, className = "", sourceType = "quote_form", packageId, destinationId, initialDestination = "Sikkim" }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -16,7 +18,7 @@ const QuoteForm = ({ onSuccess, className = "" }) => {
     fullName: '',
     phone: '',
     whatsapp: '',
-    destination: 'Sikkim',
+    destination: initialDestination,
     month: '',
     travelers: '',
     budget: '',
@@ -60,15 +62,28 @@ const QuoteForm = ({ onSuccess, className = "" }) => {
     // ------------------------------------------------------------------
 
     try {
-      // Simulate network request logs for verification
-      console.group("🚀 Sending Quote Request");
-      console.log("TO: info@asiantrips.com");
-      console.log("CC: lakkshanb@gmail.com");
-      console.log("📦 PAYLOAD:", formData);
-      console.groupEnd();
+      const inquiry = inquiryService.create({
+        fullName: formData.fullName,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        destination: formData.destination,
+        travelDate: formData.month,
+        travelers: formData.travelers,
+        budget: formData.budget,
+        message: formData.message,
+        sourceType,
+        packageId,
+        destinationId,
+      });
 
-      // Simulate API latency
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      trackEvent('quote_submitted', {
+        inquiry_id: inquiry.id,
+        source_type: sourceType,
+        destination: formData.destination,
+        package_id: packageId,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Trigger Conversion Tracking
       trackConversion();
@@ -119,7 +134,7 @@ const QuoteForm = ({ onSuccess, className = "" }) => {
               fullName: '',
               phone: '',
               whatsapp: '',
-              destination: 'Sikkim',
+              destination: initialDestination,
               month: '',
               travelers: '',
               budget: '',

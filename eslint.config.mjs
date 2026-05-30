@@ -3,6 +3,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 
+const cleanGlobals = (globalSet) =>
+	Object.fromEntries(Object.entries(globalSet).map(([key, value]) => [key.trim(), value]));
+
 export default [
 	{ ignores: ['node_modules/**', 'dist/**', 'build/**', 'vite.config.js'] },
 	{
@@ -12,13 +15,12 @@ export default [
 			ecmaVersion: 'latest',
 			sourceType: 'module',
 			parserOptions: { ecmaFeatures: { jsx: true } },
-			globals: { ...globals.browser, React: 'readonly', Intl: 'readonly' },
+			globals: { ...cleanGlobals(globals.browser), React: 'readonly', Intl: 'readonly' },
 		},
 		settings: {
 			react: { version: 'detect' },
 			'import/resolver': {
 				node: { extensions: ['.js', '.jsx'] },
-				alias: { map: [['@', './src']], extensions: ['.js', '.jsx'] },
 			},
 		},
 		rules: {
@@ -38,6 +40,7 @@ export default [
 			'no-unused-vars': 'off', // Non-critical, code works fine with unused vars
 			'import/no-named-as-default': 'off', // Can cause runtime import errors, usually fine to leave as is
 			'import/no-named-as-default-member': 'off', // Can cause runtime import errors
+			'import/no-unresolved': 'off', // Vite resolves @ aliases without eslint-import-resolver-alias
 
 			// Critical rules that prevent runtime errors
 			'no-undef': 'error', // Undefined variables cause runtime errors
@@ -49,5 +52,5 @@ export default [
 			'import/no-cycle': 'off', // AI rarely makes this error, and the rule is very slow to run
 		},
 	},
-	{ files: ['tools/**/*.js', 'tailwind.config.js'], languageOptions: { globals: globals.node } },
+	{ files: ['tools/**/*.js', 'tailwind.config.js'], languageOptions: { globals: cleanGlobals(globals.node) } },
 ];
