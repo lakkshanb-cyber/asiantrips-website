@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
 import { SITE } from '@/lib/constants';
 import { blogService } from '@/services/cmsService';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 const BlogList = () => {
-  const posts = blogService.published();
+  const loadPosts = useCallback(() => blogService.published(), []);
+  const { data: posts, isLoading, error } = useAsyncData(loadPosts, []);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Blog',
@@ -24,6 +26,8 @@ const BlogList = () => {
         <h1 className="mt-3 text-4xl font-bold text-slate-900">Travel Blog</h1>
         <p className="mt-3 max-w-2xl text-slate-600">SEO travel articles are managed in the admin dashboard and rendered through dynamic public routes.</p>
         <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {isLoading && <p className="text-slate-500">Loading blog posts...</p>}
+          {error && <p className="text-red-600">{error}</p>}
           {posts.map((post) => (
             <Link key={post.id} to={`/blog/${post.slug}`} className="overflow-hidden rounded-3xl border bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
               <img src={post.coverImage} alt={post.title} className="h-52 w-full object-cover" />

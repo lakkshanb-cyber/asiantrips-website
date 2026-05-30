@@ -1,79 +1,104 @@
-import { destinations, packages, blogPosts, galleryItems, testimonials, inquiries } from '@/data/mockCmsData';
 import { ensureUniqueSlug } from '@/lib/slug';
+import { supabaseRest, supabaseStorage } from '@/lib/supabaseClient';
 
-const STORAGE_PREFIX = 'asiantrips_cms_';
-const clone = (value) => JSON.parse(JSON.stringify(value));
-
-const readCollection = (key, fallback) => {
-  if (typeof window === 'undefined') return clone(fallback);
-  const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${key}`);
-  if (!raw) {
-    window.localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(fallback));
-    return clone(fallback);
-  }
-  return JSON.parse(raw);
-};
-
-const writeCollection = (key, value) => {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
-  }
-  return clone(value);
-};
-
-const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+const toCamel = (record = {}) => Object.fromEntries(Object.entries(record).map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value]));
+const toSnake = (record = {}) => Object.fromEntries(Object.entries(record).map(([key, value]) => [key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), value]));
 const isPublishedRecord = (item) => item.isPublished !== false && item.status !== 'draft';
+const orderQuery = '?select=*&order=created_at.desc';
+
+const tableConfig = {
+  destinations: { table: 'destinations', imageFields: { heroImage: 'hero_image_url' } },
+  packages: { table: 'packages' },
+  blog: { table: 'blogs', imageFields: { coverImage: 'cover_image_url' } },
+  gallery: { table: 'gallery', hasSlug: false },
+  testimonials: { table: 'testimonials', hasSlug: false },
+  inquiries: { table: 'inquiries' },
+};
+
+const toDb = (payload, config = {}) => {
+  const next = { ...payload };
+  Object.entries(config.imageFields || {}).forEach(([camel, snake]) => {
+    if (camel in next) {
+      next[snake.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())] = next[camel];
+      delete next[camel];
+    }
+  });
+  delete next.createdAt;
+  delete next.updatedAt;
+  delete next.category;
+  if (!config.hasSlug && config.hasSlug === false) delete next.slug;
+  if (config.table === 'gallery') delete next.featured;
+  const dbRecord = toSnake(next);
+  if (dbRecord.hero_image) {
+    dbRecord.hero_image_url = dbRecord.hero_image;
+    delete dbRecord.hero_image;
+  }
+  if (dbRecord.cover_image) {
+    dbRecord.cover_image_url = dbRecord.cover_image;
+    delete dbRecord.cover_image;
+  }
+  Object.keys(dbRecord).forEach((key) => dbRecord[key] === undefined && delete dbRecord[key]);
+  return dbRecord;
+};
+
+const fromDb = (record, config = {}) => {
+  const next = toCamel(record);
+  Object.entries(config.imageFields || {}).forEach(([camel, snake]) => {
+    const camelFromSnake = snake.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    if (camelFromSnake in next) {
+      next[camel] = next[camelFromSnake];
+      delete next[camelFromSnake];
+    }
+  });
+  return next;
+};
 
 const normalizeSlug = (payload, records, slugField, currentId) => {
   const candidate = payload.slug || payload[slugField] || payload.name || payload.title || payload.customerName;
   return ensureUniqueSlug(candidate, records, currentId);
 };
 
-const createCrud = ({ key, fallback, prefix, slugField = 'title' }) => ({
-  list: () => readCollection(key, fallback),
-  published: () => readCollection(key, fallback).filter(isPublishedRecord),
-  getById: (id) => readCollection(key, fallback).find((item) => item.id === id),
-  getBySlug: (slug) => readCollection(key, fallback).find((item) => item.slug === slug && isPublishedRecord(item)),
-  create: (payload) => {
-    const records = readCollection(key, fallback);
-    const record = {
-      ...payload,
-      id: makeId(prefix),
-      slug: normalizeSlug(payload, records, slugField),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    writeCollection(key, [record, ...records]);
-    return clone(record);
-  },
-  update: (id, payload) => {
-    const records = readCollection(key, fallback);
-    const next = records.map((item) => {
-      if (item.id !== id) return item;
-      const merged = { ...item, ...payload, updatedAt: new Date().toISOString() };
-      merged.slug = normalizeSlug(merged, records, slugField, id);
-      return merged;
-    });
-    writeCollection(key, next);
-    return clone(next.find((item) => item.id === id));
-  },
-  remove: (id) => {
-    const records = readCollection(key, fallback);
-    writeCollection(key, records.filter((item) => item.id !== id));
-  },
-});
+const createCrud = ({ type, slugField = 'title' }) => {
+  const config = tableConfig[type];
+  return {
+    list: async () => (await supabaseRest.select(config.table, orderQuery)).map((item) => fromDb(item, config)),
+    published: async () => (await supabaseRest.select(config.table, orderQuery)).map((item) => fromDb(item, config)).filter(isPublishedRecord),
+    getById: async (id) => {
+      const rows = await supabaseRest.select(config.table, `?select=*&id=eq.${encodeURIComponent(id)}&limit=1`);
+      return rows[0] ? fromDb(rows[0], config) : null;
+    },
+    getBySlug: async (slug) => {
+      const rows = await supabaseRest.select(config.table, `?select=*&slug=eq.${encodeURIComponent(slug)}&limit=1`);
+      const record = rows[0] ? fromDb(rows[0], config) : null;
+      return record && isPublishedRecord(record) ? record : null;
+    },
+    create: async (payload) => {
+      const records = config.hasSlug === false ? [] : await supabaseRest.select(config.table, '?select=id,slug');
+      const record = config.hasSlug === false ? { ...payload } : { ...payload, slug: normalizeSlug(payload, records.map(toCamel), slugField) };
+      const rows = await supabaseRest.insert(config.table, toDb(record, config));
+      return fromDb(rows[0], config);
+    },
+    update: async (id, payload) => {
+      const records = config.hasSlug === false ? [] : await supabaseRest.select(config.table, '?select=id,slug');
+      const record = config.hasSlug === false ? { ...payload, updatedAt: new Date().toISOString() } : { ...payload, slug: normalizeSlug(payload, records.map(toCamel), slugField, id), updatedAt: new Date().toISOString() };
+      const rows = await supabaseRest.update(config.table, id, toDb(record, config));
+      return fromDb(rows[0], config);
+    },
+    remove: async (id) => supabaseRest.remove(config.table, id),
+  };
+};
 
-export const destinationService = createCrud({ key: 'destinations', fallback: destinations, prefix: 'dest', slugField: 'name' });
-export const packageService = createCrud({ key: 'packages', fallback: packages, prefix: 'pkg', slugField: 'title' });
-export const blogService = createCrud({ key: 'blog_posts', fallback: blogPosts, prefix: 'blog', slugField: 'title' });
-export const galleryService = createCrud({ key: 'gallery_items', fallback: galleryItems, prefix: 'gal', slugField: 'title' });
-export const testimonialService = createCrud({ key: 'testimonials', fallback: testimonials, prefix: 'test', slugField: 'customerName' });
+export const destinationService = createCrud({ type: 'destinations', slugField: 'name' });
+export const packageService = createCrud({ type: 'packages', slugField: 'title' });
+export const blogService = createCrud({ type: 'blog', slugField: 'title' });
+export const galleryService = createCrud({ type: 'gallery', slugField: 'title' });
+export const testimonialService = createCrud({ type: 'testimonials', slugField: 'customerName' });
 
 export const inquiryService = {
-  list: () => readCollection('inquiries', inquiries),
-  search: ({ query = '', status = 'all' } = {}) => {
+  list: async () => (await supabaseRest.select(tableConfig.inquiries.table, orderQuery)).map(toCamel),
+  search: async ({ query = '', status = 'all' } = {}) => {
     const normalizedQuery = query.trim().toLowerCase();
-    return readCollection('inquiries', inquiries).filter((item) => {
+    return (await inquiryService.list()).filter((item) => {
       const matchesStatus = status === 'all' || item.status === status;
       const searchable = [item.fullName, item.phone, item.whatsapp, item.destination, item.travelDate, item.month, item.budget, item.message, item.sourceType]
         .filter(Boolean)
@@ -82,30 +107,17 @@ export const inquiryService = {
       return matchesStatus && (!normalizedQuery || searchable.includes(normalizedQuery));
     });
   },
-  create: (payload) => {
-    const records = readCollection('inquiries', inquiries);
-    const record = {
-      id: makeId('inq'),
-      status: 'new',
-      sourceType: 'quote_form',
-      createdAt: new Date().toISOString(),
-      ...payload,
-    };
-    writeCollection('inquiries', [record, ...records]);
-    return record;
+  create: async (payload) => {
+    const rows = await supabaseRest.insert(tableConfig.inquiries.table, toDb({ status: 'new', sourceType: 'quote_form', ...payload }, tableConfig.inquiries));
+    return toCamel(rows[0]);
   },
-  updateStatus: (id, status) => {
-    const records = readCollection('inquiries', inquiries);
-    const next = records.map((item) => (item.id === id ? { ...item, status, updatedAt: new Date().toISOString() } : item));
-    writeCollection('inquiries', next);
-    return next.find((item) => item.id === id);
+  updateStatus: async (id, status) => {
+    const rows = await supabaseRest.update(tableConfig.inquiries.table, id, { status, updated_at: new Date().toISOString() });
+    return toCamel(rows[0]);
   },
-  remove: (id) => {
-    const records = readCollection('inquiries', inquiries);
-    writeCollection('inquiries', records.filter((item) => item.id !== id));
-  },
-  stats: () => {
-    const records = readCollection('inquiries', inquiries);
+  remove: async (id) => supabaseRest.remove(tableConfig.inquiries.table, id),
+  stats: async () => {
+    const records = await inquiryService.list();
     return {
       total: records.length,
       newCount: records.filter((item) => item.status === 'new').length,
@@ -117,4 +129,6 @@ export const inquiryService = {
   },
 };
 
-export const getDestinationName = (destinationId) => destinationService.list().find((destination) => destination.id === destinationId)?.name || 'Custom';
+export const uploadCmsImage = (bucket, file) => supabaseStorage.uploadPublicImage(bucket, file);
+
+export const getDestinationName = async (destinationId) => (await destinationService.list()).find((destination) => destination.id === destinationId)?.name || 'Custom';

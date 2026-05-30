@@ -54,15 +54,12 @@ const QuoteForm = ({ onSuccess, className = "", sourceType = "quote_form", packa
     // ------------------------------------------------------------------
     // Target Recipients: info@asiantrips.com, lakkshanb@gmail.com
     //
-    // NOTE: As this is a frontend-only environment, we are simulating
-    // the backend email dispatch. In production, connect this to:
-    // 1. Supabase Edge Functions (recommended)
-    // 2. EmailJS / Formspree
-    // 3. Custom Backend API
+    // Supabase stores the lead immediately. Email dispatch can be added with
+    // Supabase Edge Functions, EmailJS/Formspree, or a custom backend API.
     // ------------------------------------------------------------------
 
     try {
-      const inquiry = inquiryService.create({
+      const inquiry = await inquiryService.create({
         fullName: formData.fullName,
         phone: formData.phone,
         whatsapp: formData.whatsapp,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, MessageCircle, Search, Trash2, TrendingUp, UserCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,30 @@ const StatCard = ({ label, value, icon: Icon, tone }) => (
 );
 
 const AdminInquiries = () => {
-  const [records, setRecords] = useState(inquiryService.list());
+  const [records, setRecords] = useState([]);
+  const [stats, setStats] = useState({ total: 0, newCount: 0, contacted: 0, converted: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [query, setQuery] = useState('');
-  const stats = inquiryService.stats();
 
-  const refresh = () => setRecords(inquiryService.list());
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [items, inquiryStats] = await Promise.all([inquiryService.list(), inquiryService.stats()]);
+      setRecords(items);
+      setStats(inquiryStats);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const filteredRecords = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -34,15 +52,15 @@ const AdminInquiries = () => {
     });
   }, [query, records, statusFilter]);
 
-  const updateStatus = (id, status) => {
-    inquiryService.updateStatus(id, status);
-    refresh();
+  const updateStatus = async (id, status) => {
+    await inquiryService.updateStatus(id, status);
+    await refresh();
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (!window.confirm('Delete this inquiry?')) return;
-    inquiryService.remove(id);
-    refresh();
+    await inquiryService.remove(id);
+    await refresh();
   };
 
   const quickStatusButton = (inquiry, status, label, Icon) => (
@@ -55,9 +73,11 @@ const AdminInquiries = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Inquiry Management</h2>
-        <p className="text-sm text-slate-600">Search, filter, contact, convert, and track quote requests from the mock CMS database.</p>
+        <p className="text-sm text-slate-600">Search, filter, contact, convert, and track quote requests from Supabase.</p>
       </div>
 
+      {isLoading && <p className="text-slate-500">Loading inquiries...</p>}
+      {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total inquiries" value={stats.total} icon={Users} tone="bg-blue-50 text-blue-700" />
         <StatCard label="New inquiries" value={stats.newCount} icon={MessageCircle} tone="bg-orange-50 text-orange-700" />

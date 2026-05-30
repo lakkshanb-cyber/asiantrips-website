@@ -1,32 +1,40 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { ADMIN_DEMO_USER } from '@/lib/constants';
+import { supabaseAuth } from '@/lib/supabaseClient';
 
 const AuthContext = createContext(null);
 
+const sessionToUser = (session) => {
+  if (!session?.user) return null;
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.user_metadata?.full_name || session.user.email,
+    role: 'admin',
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [adminUser, setAdminUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('asiantrips_admin_user');
-    if (saved) setAdminUser(JSON.parse(saved));
+    setAdminUser(sessionToUser(supabaseAuth.getSession()));
+    setIsAuthLoading(false);
   }, []);
 
   const login = async ({ email, password }) => {
-    if (email === ADMIN_DEMO_USER.email && password === ADMIN_DEMO_USER.password) {
-      const user = { email, name: ADMIN_DEMO_USER.name, role: 'admin' };
-      window.localStorage.setItem('asiantrips_admin_user', JSON.stringify(user));
-      setAdminUser(user);
-      return { user };
-    }
-    throw new Error('Invalid demo credentials. Use the email and password shown on this page.');
+    const session = await supabaseAuth.signInWithPassword({ email, password });
+    const user = sessionToUser(session);
+    setAdminUser(user);
+    return { user };
   };
 
-  const logout = () => {
-    window.localStorage.removeItem('asiantrips_admin_user');
+  const logout = async () => {
+    await supabaseAuth.signOut();
     setAdminUser(null);
   };
 
-  const value = useMemo(() => ({ adminUser, isAuthenticated: Boolean(adminUser), login, logout }), [adminUser]);
+  const value = useMemo(() => ({ adminUser, isAuthenticated: Boolean(adminUser), isAuthLoading, login, logout }), [adminUser, isAuthLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

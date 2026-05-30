@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,11 @@ import Footer from '@/components/Footer';
 import SEO from '@/components/shared/SEO';
 import { SITE } from '@/lib/constants';
 import { destinationService } from '@/services/cmsService';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 const Destinations = () => {
-  const destinations = destinationService.published();
+  const loadDestinations = useCallback(() => destinationService.published(), []);
+  const { data: destinations, isLoading, error } = useAsyncData(loadDestinations, []);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -32,6 +34,8 @@ const Destinations = () => {
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-20 md:grid-cols-2 lg:grid-cols-3">
+          {isLoading && <p className="text-slate-500">Loading destinations...</p>}
+          {error && <p className="text-red-600">{error}</p>}
           {destinations.map((destination) => (
             <article key={destination.id} className="overflow-hidden rounded-3xl border bg-white shadow-lg">
               <img src={destination.heroImage} alt={destination.name} className="h-56 w-full object-cover" />

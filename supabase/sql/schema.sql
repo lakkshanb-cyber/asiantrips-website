@@ -1,5 +1,5 @@
 -- AsianTrips Holidays CMS platform schema
--- Apply after creating a Supabase project. This app currently uses mock services until @supabase/supabase-js can be installed.
+-- Apply after creating a Supabase project. This app connects directly to Supabase Auth, PostgREST, and Storage from the browser.
 
 create extension if not exists "uuid-ossp";
 
@@ -75,7 +75,7 @@ create table if not exists public.inquiries (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.blog_posts (
+create table if not exists public.blogs (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
   slug text not null unique,
@@ -90,7 +90,7 @@ create table if not exists public.blog_posts (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.gallery_items (
+create table if not exists public.gallery (
   id uuid primary key default uuid_generate_v4(),
   title text,
   image_url text not null,
@@ -121,14 +121,14 @@ alter table public.destinations enable row level security;
 alter table public.package_categories enable row level security;
 alter table public.packages enable row level security;
 alter table public.inquiries enable row level security;
-alter table public.blog_posts enable row level security;
-alter table public.gallery_items enable row level security;
+alter table public.blogs enable row level security;
+alter table public.gallery enable row level security;
 alter table public.testimonials enable row level security;
 
 create policy "Published destinations are public" on public.destinations for select using (is_published = true);
 create policy "Published packages are public" on public.packages for select using (is_published = true);
-create policy "Published blog posts are public" on public.blog_posts for select using (status = 'published');
-create policy "Published gallery is public" on public.gallery_items for select using (is_published = true);
+create policy "Published blogs are public" on public.blogs for select using (status = 'published');
+create policy "Published gallery is public" on public.gallery for select using (is_published = true);
 create policy "Published testimonials are public" on public.testimonials for select using (is_published = true);
 create policy "Anyone can create inquiries" on public.inquiries for insert with check (true);
 
@@ -136,6 +136,32 @@ create policy "Anyone can create inquiries" on public.inquiries for insert with 
 create policy "Authenticated users can manage CMS" on public.destinations for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "Authenticated users can manage packages" on public.packages for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "Authenticated users can manage inquiries" on public.inquiries for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "Authenticated users can manage blog" on public.blog_posts for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "Authenticated users can manage gallery" on public.gallery_items for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "Authenticated users can manage blogs" on public.blogs for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "Authenticated users can manage gallery" on public.gallery for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "Authenticated users can manage testimonials" on public.testimonials for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+
+-- Public image storage buckets used by the CMS upload fields.
+insert into storage.buckets (id, name, public) values
+  ('destinations', 'destinations', true),
+  ('packages', 'packages', true),
+  ('blogs', 'blogs', true),
+  ('gallery', 'gallery', true)
+on conflict (id) do update set public = excluded.public;
+
+create policy "Public can view AsianTrips CMS images"
+on storage.objects for select
+using (bucket_id in ('destinations', 'packages', 'blogs', 'gallery'));
+
+create policy "Authenticated users can upload AsianTrips CMS images"
+on storage.objects for insert
+with check (auth.role() = 'authenticated' and bucket_id in ('destinations', 'packages', 'blogs', 'gallery'));
+
+create policy "Authenticated users can update AsianTrips CMS images"
+on storage.objects for update
+using (auth.role() = 'authenticated' and bucket_id in ('destinations', 'packages', 'blogs', 'gallery'))
+with check (auth.role() = 'authenticated' and bucket_id in ('destinations', 'packages', 'blogs', 'gallery'));
+
+create policy "Authenticated users can delete AsianTrips CMS images"
+on storage.objects for delete
+using (auth.role() = 'authenticated' and bucket_id in ('destinations', 'packages', 'blogs', 'gallery'));
