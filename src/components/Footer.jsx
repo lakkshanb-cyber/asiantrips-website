@@ -52,13 +52,13 @@ const Footer = () => {
           <div>
             <span className="text-lg font-serif font-bold mb-6 block text-orange-400">Contact Us</span>
             <div className="space-y-4">
-              <a href="tel:9933649669" className="flex items-center gap-3 text-blue-200 hover:text-white transition-colors group">
+              <a href="tel:9907562273" className="flex items-center gap-3 text-blue-200 hover:text-white transition-colors group">
                 <div className="p-2 bg-blue-900 rounded-lg group-hover:bg-orange-500 transition-colors">
                   <Phone className="w-4 h-4" />
                 </div>
-                <span className="text-sm font-medium">+91 9933649669</span>
+                <span className="text-sm font-medium">+91 9907562273</span>
               </a>
-              <a href="https://wa.me/919933649669" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-blue-200 hover:text-white transition-colors group">
+              <a href="https://wa.me/919907562273" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-blue-200 hover:text-white transition-colors group">
                 <div className="p-2 bg-blue-900 rounded-lg group-hover:bg-green-500 transition-colors">
                   <MessageCircle className="w-4 h-4" />
                 </div>
