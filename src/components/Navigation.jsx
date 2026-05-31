@@ -56,14 +56,14 @@ const Navigation = () => {
               Get Free Quote
             </Button>
             <a
-              href="tel:9933649669"
+              href="tel:9907562273"
               className="hidden xl:flex items-center gap-2 px-3 py-2 text-blue-900 font-medium hover:text-orange-600 transition-colors"
             >
               <Phone className="w-4 h-4" />
-              <span>9933649669</span>
+              <span>9907562273</span>
             </a>
             <a
-              href="https://wa.me/919933649669"
+              href="https://wa.me/919907562273"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
@@ -116,14 +116,14 @@ const Navigation = () => {
                 </Button>
                 <div className="flex gap-4">
                   <a
-                    href="tel:9933649669"
+                    href="tel:9907562273"
                     className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg text-blue-900 font-medium hover:bg-gray-50"
                   >
                     <Phone className="w-4 h-4" />
                     Call
                   </a>
                   <a
-                    href="https://wa.me/919933649669"
+                    href="https://wa.me/919907562273"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 py-3 border border-green-200 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100"
