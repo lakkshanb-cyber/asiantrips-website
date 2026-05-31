@@ -15,7 +15,7 @@ const Home = () => {
     {
       name: 'Northeast India',
       description: 'Discover the hidden paradise of Northeast India with breathtaking mountains, crystal-clear rivers, waterfalls, tribal culture, wildlife and unforgettable Himalayan landscapes.',
-      image: 'https://images.unsplash.com/photo-1518331647614-7a1f04cd34cf?q=80&w=1000&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&q=80',
       bestTime: 'October to April',
       tags: ['State Lake', 'Living Root Bridge', 'Cherrapunji'],
       locations: ['Meghalaya', 'Arunachal Pradesh', 'Nagaland'],
@@ -24,7 +24,7 @@ const Home = () => {
     {
       name: 'Nepal',
       description: 'Explore the breathtaking beauty of Nepal with majestic Himalayan peaks, ancient temples, adventure activities and unforgettable cultural experiences.',
-      image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1000&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80',
       bestTime: 'March to May and September to December',
       tags: ['Mount Everest View', 'Pokhara', 'Phewa Lake'],
       locations: ['Kathmandu', 'Pokhara', 'Nagarkot'],
@@ -33,7 +33,7 @@ const Home = () => {
     {
       name: 'Bhutan',
       description: 'Experience the Land of Happiness with stunning monasteries, Himalayan landscapes, rich culture and vibrant traditions.',
-      image: 'https://images.unsplash.com/photo-1603525169055-61845112e5e1?q=80&w=1000&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1574768390632-1bde9b9a6b18?auto=format&fit=crop&q=80',
       bestTime: 'March to May and September to November',
       tags: ['Tiger\'s Nest', 'Paro', 'Thimphu'],
       locations: ['Paro', 'Thimphu', 'Punakha'],
@@ -42,7 +42,7 @@ const Home = () => {
     {
       name: 'Sikkim',
       description: 'A Himalayan paradise blessed with snow-capped mountains, crystal clear lakes, ancient monasteries, adventure trails and breathtaking landscapes.',
-      image: 'https://images.unsplash.com/photo-1588825227717-b7654f15d2a6?q=80&w=1000&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1544634076-a900ce0ed528?auto=format&fit=crop&q=80',
       bestTime: 'March to June & October to December',
       tags: ['Gurudongmar Lake', 'Tsomgo Lake', 'Nathula Pass'],
       locations: ['Gangtok', 'North Sikkim', 'Pelling'],
@@ -82,10 +82,10 @@ const Home = () => {
             <AsianTripsLogo type="full" className="mx-auto scale-110 md:scale-125 mb-12 text-white" />
             <h1 className="text-4xl md:text-6xl font-bold mb-6">Plan Your Perfect Trip <span className="text-orange-400">Without Worries</span></h1>
             <p className="text-xl mb-8">No False Promises • No Hidden Costs • Real Support</p>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button onClick={openModal} className="bg-orange-500 text-white px-8 py-6 text-lg hover:bg-orange-600 transition-colors">Get Free Quote</Button>
               <Link to="/packages">
-                <Button variant="outline" className="bg-white text-blue-900 px-8 py-6 text-lg hover:bg-gray-100 transition-colors">Explore Packages</Button>
+                <Button variant="outline" className="bg-white text-blue-900 px-8 py-6 text-lg hover:bg-gray-100 transition-colors w-full sm:w-auto">Explore Packages</Button>
               </Link>
             </div>
         </div>
@@ -207,10 +207,10 @@ const Home = () => {
             <div className="bg-blue-900 text-white p-8 md:p-12 rounded-2xl max-w-4xl mx-auto">
                 <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Start Your Journey?</h3>
                 <p className="mb-6 text-blue-200">Get in touch with us today and let our experts plan your perfect getaway</p>
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button onClick={openModal} className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg transition-colors">Get Free Quote</Button>
                     <Link to="/contact">
-                        <Button variant="outline" className="bg-white text-blue-900 px-8 py-6 text-lg hover:bg-gray-100 transition-colors">Contact Us</Button>
+                        <Button variant="outline" className="bg-white text-blue-900 px-8 py-6 text-lg hover:bg-gray-100 transition-colors w-full sm:w-auto">Contact Us</Button>
                     </Link>
                 </div>
             </div>
