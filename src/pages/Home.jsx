@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
 import AsianTripsLogo from '@/components/AsianTripsLogo';
 import { useQuoteModal } from '@/context/QuoteModalContext';
+
 const Home = () => {
-  const {
-    openModal
-  } = useQuoteModal();
+  const { openModal } = useQuoteModal();
+  
   const destinations = [{
     name: 'Sikkim',
     description: 'Explore pristine mountains, monasteries, and vibrant culture',
@@ -32,6 +32,7 @@ const Home = () => {
     description: 'Trek through Himalayas and visit sacred temples',
     image: 'Majestic Himalayan peaks in Nepal with prayer flags'
   }];
+
   const whyChoose = [{
     icon: <Shield className="w-8 h-8" />,
     title: 'Verified Hotels',
@@ -49,6 +50,7 @@ const Home = () => {
     title: '24×7 Support',
     description: 'Round-the-clock assistance throughout your journey'
   }];
+
   const packages = [{
     title: 'Adventure Tours',
     description: 'Thrilling treks, rafting, and mountain expeditions',
@@ -66,7 +68,9 @@ const Home = () => {
     description: 'Romantic getaways in breathtaking locations',
     icon: <Calendar className="w-6 h-6" />
   }];
+
   const trustPoints = ['500+ Happy Travelers', '50+ Destinations Covered', '10+ Years of Excellence', '100% Customer Satisfaction'];
+
   return <>
       <Helmet>
         <title>AsianTrips - Plan Your Perfect Trip Without Worries | Premium Travel Experiences</title>
@@ -80,15 +84,7 @@ const Home = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8
-        }} className="text-center max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl mx-auto">
             <div className="mb-12">
               <AsianTripsLogo type="full" className="mx-auto scale-110 md:scale-125 text-white [&_.logo-text]:text-white [&_.logo-tagline]:text-blue-100" />
             </div>
@@ -139,15 +135,7 @@ const Home = () => {
       {/* Destinations Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Explore Amazing Destinations
             </h2>
@@ -157,29 +145,27 @@ const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {destinations.map((destination, index) => <motion.div key={destination.name} initial={{
-            opacity: 0,
-            y: 30
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img alt={destination.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://horizons-cdn.hostinger.com/82871eb4-d506-4da4-acd2-e5a1918556e3/3-1-M82Wr.jpg" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="w-5 h-5 text-orange-400" />
-                    <span className="text-2xl font-bold">{destination.name}</span>
+            {destinations.map((destination, index) => (
+              <Link 
+                key={destination.name} 
+                to={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
+                className="block"
+              >
+                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img alt={destination.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://horizons-cdn.hostinger.com/82871eb4-d506-4da4-acd2-e5a1918556e3/3-1-M82Wr.jpg" />
                   </div>
-                  <p className="text-gray-200 text-sm">{destination.description}</p>
-                </div>
-              </motion.div>)}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="w-5 h-5 text-orange-400" />
+                      <span className="text-2xl font-bold">{destination.name}</span>
+                    </div>
+                    <p className="text-gray-200 text-sm">{destination.description}</p>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -187,15 +173,7 @@ const Home = () => {
       {/* Why Choose AsianTrips */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Why Choose AsianTrips
             </h2>
@@ -205,23 +183,15 @@ const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {whyChoose.map((item, index) => <motion.div key={item.title} initial={{
-            opacity: 0,
-            y: 30
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-orange-50 hover:shadow-lg transition-shadow">
+            {whyChoose.map((item, index) => (
+              <motion.div key={item.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-orange-50 hover:shadow-lg transition-shadow">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-900 to-blue-700 text-white rounded-full mb-4">
                   {item.icon}
                 </div>
                 <span className="text-xl font-bold text-gray-900 mb-2 block">{item.title}</span>
                 <p className="text-gray-600 text-sm">{item.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -229,15 +199,7 @@ const Home = () => {
       {/* Featured Packages */}
       <section className="py-20 bg-gradient-to-br from-blue-950 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Packages</h2>
             <p className="text-blue-200 max-w-2xl mx-auto">
               Choose from our curated selection of tour packages
@@ -245,23 +207,17 @@ const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {packages.map((pkg, index) => <motion.div key={pkg.title} initial={{
-            opacity: 0,
-            y: 30
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 hover:bg-white/20 transition-all border border-white/20 cursor-pointer">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-lg mb-4">
-                  {pkg.icon}
-                </div>
-                <span className="text-xl font-bold mb-2 block">{pkg.title}</span>
-                <p className="text-blue-200 text-sm">{pkg.description}</p>
-              </motion.div>)}
+            {packages.map((pkg, index) => (
+              <Link key={pkg.title} to="/packages" className="block">
+                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 hover:bg-white/20 transition-all border border-white/20 cursor-pointer h-full">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-lg mb-4">
+                    {pkg.icon}
+                  </div>
+                  <span className="text-xl font-bold mb-2 block">{pkg.title}</span>
+                  <p className="text-blue-200 text-sm">{pkg.description}</p>
+                </motion.div>
+              </Link>
+            ))}
           </div>
 
           <div className="text-center mt-12">
@@ -277,15 +233,7 @@ const Home = () => {
       {/* Travel With Confidence */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Travel With Confidence
             </h2>
@@ -294,22 +242,14 @@ const Home = () => {
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-              {trustPoints.map((point, index) => <motion.div key={point} initial={{
-              opacity: 0,
-              scale: 0.8
-            }} whileInView={{
-              opacity: 1,
-              scale: 1
-            }} viewport={{
-              once: true
-            }} transition={{
-              delay: index * 0.1
-            }} className="text-center">
+              {trustPoints.map((point, index) => (
+                <motion.div key={point} initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="text-center">
                   <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-900 to-orange-500 bg-clip-text text-transparent mb-2">
                     {point.split(' ')[0]}
                   </div>
                   <p className="text-gray-600 text-sm">{point.split(' ').slice(1).join(' ')}</p>
-                </motion.div>)}
+                </motion.div>
+              ))}
             </div>
 
             <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-2xl p-8 md:p-12">
@@ -333,6 +273,8 @@ const Home = () => {
       </section>
 
       <Footer />
-    </>;
+    </>
+  );
 };
+
 export default Home;
