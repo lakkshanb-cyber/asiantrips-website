@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -7,31 +7,34 @@ import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
 import AsianTripsLogo from '@/components/AsianTripsLogo';
 import { useQuoteModal } from '@/context/QuoteModalContext';
+import { supabase } from '@/lib/supabaseClient'; // Supabase client import
 
 const Home = () => {
   const { openModal } = useQuoteModal();
   
-  const destinations = [{
-    name: 'Sikkim',
-    description: 'Explore pristine mountains, monasteries, and vibrant culture',
-    image: 'Scenic mountain landscape of Sikkim with snow-capped peaks and green valleys'
-  }, {
-    name: 'Darjeeling',
-    description: 'Experience tea gardens, colonial charm, and Himalayan views',
-    image: 'Beautiful tea plantations in Darjeeling with mountain backdrop'
-  }, {
-    name: 'Bhutan',
-    description: 'Discover the Land of Thunder Dragon and ancient traditions',
-    image: 'Iconic Tigers Nest monastery in Bhutan perched on cliff'
-  }, {
-    name: 'Northeast India',
-    description: 'Uncover hidden gems and diverse tribal cultures',
-    image: 'Lush green hills and valleys of Northeast India with traditional villages'
-  }, {
-    name: 'Nepal',
-    description: 'Trek through Himalayas and visit sacred temples',
-    image: 'Majestic Himalayan peaks in Nepal with prayer flags'
-  }];
+  // Supabase se destinations fetch karne ke liye state
+  const [destinations, setDestinations] = useState([]);
+
+  // Data load karne ka logic
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('destinations')
+          .select('*'); // Saare columns (name, description, image) fetch karega
+        
+        if (error) {
+          console.error('Error fetching destinations:', error);
+        } else if (data) {
+          setDestinations(data);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   const whyChoose = [{
     icon: <Shield className="w-8 h-8" />,
@@ -132,7 +135,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Destinations Section */}
+      {/* Destinations Section (Now fetching from Supabase) */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
@@ -144,29 +147,34 @@ const Home = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {destinations.map((destination, index) => (
-              <Link 
-                key={destination.name} 
-                to={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-                className="block"
-              >
-                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white">
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img alt={destination.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://horizons-cdn.hostinger.com/82871eb4-d506-4da4-acd2-e5a1918556e3/3-1-M82Wr.jpg" />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="w-5 h-5 text-orange-400" />
-                      <span className="text-2xl font-bold">{destination.name}</span>
+          {destinations.length === 0 ? (
+            <p className="text-center text-gray-500">Loading destinations...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {destinations.map((destination, index) => (
+                <Link 
+                  key={destination.name || index} 
+                  to={`/destinations/${(destination.name || '').toLowerCase().replace(/\s+/g, '-')}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white">
+                    <div className="aspect-[4/3] overflow-hidden">
+                      {/* Image direct Supabase table se aayegi */}
+                      <img alt={destination.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src={destination.image} />
                     </div>
-                    <p className="text-gray-200 text-sm">{destination.description}</p>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="w-5 h-5 text-orange-400" />
+                        <span className="text-2xl font-bold">{destination.name}</span>
+                      </div>
+                      <p className="text-gray-200 text-sm">{destination.description}</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -208,7 +216,7 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {packages.map((pkg, index) => (
-              <Link key={pkg.title} to="/packages" className="block">
+              <Link key={pkg.title} to="/packages" style={{ textDecoration: 'none' }} className="block">
                 <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 hover:bg-white/20 transition-all border border-white/20 cursor-pointer h-full">
                   <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-lg mb-4">
                     {pkg.icon}
